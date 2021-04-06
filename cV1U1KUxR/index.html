@@ -8,7 +8,7 @@
 <meta name="keywords" content="Gridea静态个人博客">
 <meta name="description" content="三言两语，琐碎文章">
 <meta name="theme-color" content="#000">
-<title>火鸟翎羽</title>
+<title>《命运2》浅析深石地窖的机制与设计 | 火鸟翎羽</title>
 <link rel="shortcut icon" href="/favicon.ico?v=1617709821635">
 <link rel="stylesheet" href="/media/css/pisces.css">
 <link rel="stylesheet" href="/media/fonts/font-awesome.css">
@@ -38,6 +38,8 @@
 
 
 
+  <meta name="description" content="《命运2》浅析深石地窖的机制与设计" />
+  <meta name="keywords" content="" />
 </head>
 
 <body>
@@ -71,7 +73,7 @@
           
             
             
-            <li class="nav-item nav-item-active">
+            <li class="nav-item ">
               
               
                 <a href="/" target="_self">
@@ -143,8 +145,24 @@
     <div
       class="section-layout pisces ">
       <div class="section-layout-wrapper">
-        <div id="sidebarMeta" class="sidebar">
-    
+        
+
+<div class="sidebar">
+  
+    <div class="sidebar-box box-shadow-wrapper bg-color right-motion" id="sidebar">
+      
+        <div class="post-list-sidebar">
+          <div class="sidebar-title">
+            <span id="tocSideBar" class="sidebar-title-item sidebar-title-active language" data-lan="index">文章目录</span>
+            <span id="metaSideBar" class="sidebar-title-item language" data-lan="preview">站点概览</span>
+          </div>
+        </div>
+      
+      <div class="sidebar-body pisces" id="sidebar_body">
+        
+          
+            <div class="post-side-meta" id="post_side_meta">
+              
 <div class="sidebar-wrapper box-shadow-wrapper bg-color">
   <div class="sidebar-item">
     <img class="site-author-image right-motion" src="/images/avatar.png"/>
@@ -191,101 +209,303 @@
 
 
 </div>
+            </div>
+            <div class="post-toc sidebar-body-active" id="post_toc" style="opacity: 1;">
+              <div class="toc-box right-motion">
+  <div class="toc-wrapper auto-number auto"
+    id="toc_wrapper">
+    <ul class="markdownIt-TOC">
+<li><a href="#%E5%89%8D%E8%A8%80">前言</a></li>
+<li><a href="#%E6%9C%BA%E5%88%B6%E4%BB%8B%E7%BB%8D">机制介绍</a></li>
+<li><a href="#%E7%AC%AC%E4%B8%80%E5%85%B3-%E8%A7%84%E9%81%BF%E5%A2%93%E5%AE%A4%E5%AE%89%E5%85%A8">第一关 规避墓室安全</a>
+<ul>
+<li><a href="#%E5%85%B3%E5%8D%A1%E4%BB%8B%E7%BB%8D">关卡介绍</a></li>
+<li><a href="#%E5%88%86%E6%9E%90">分析</a></li>
+</ul>
+</li>
+<li><a href="#%E7%AC%AC%E4%BA%8C%E5%85%B3-%E9%98%BF%E7%89%B9%E6%8B%89%E5%85%8B%E6%96%AF-1">第二关 阿特拉克斯-1</a>
+<ul>
+<li><a href="#%E5%85%B3%E5%8D%A1%E4%BB%8B%E7%BB%8D-2">关卡介绍</a></li>
+<li><a href="#%E5%88%86%E6%9E%90-2">分析</a></li>
+</ul>
+</li>
+<li><a href="#%E7%AC%AC%E4%B8%89%E5%85%B3-%E5%9C%A8%E4%B8%8B%E8%90%BD%E4%B8%AD%E5%AD%98%E6%B4%BB">第三关 在下落中存活</a>
+<ul>
+<li><a href="#%E5%85%B3%E5%8D%A1%E4%BB%8B%E7%BB%8D-3">关卡介绍</a></li>
+<li><a href="#%E5%88%86%E6%9E%90-3">分析</a></li>
+</ul>
+</li>
+<li><a href="#%E7%AC%AC%E5%9B%9B%E5%85%B3-%E5%9D%A6%E5%B0%BC%E5%85%8B%E6%96%AF">第四关 坦尼克斯</a>
+<ul>
+<li><a href="#%E5%85%B3%E5%8D%A1%E4%BB%8B%E7%BB%8D-4">关卡介绍</a></li>
+<li><a href="#%E5%88%86%E6%9E%90-4">分析</a></li>
+</ul>
+</li>
+<li><a href="#%E6%80%BB%E8%AF%84">总评</a></li>
+</ul>
+
+  </div>
 </div>
+
 <script>
-  let sidebarMeta = document.querySelector('#sidebarMeta');
-  let scheme = 'pisces';
-  let sidebarWrapper = document.querySelector('.sidebar-wrapper');
-  if (sidebarMeta && (scheme === 'pisces' || scheme === 'gemini')) {
-    document.addEventListener('scroll', function(e) {
-      if (document.scrollingElement.scrollTop > parseInt(sidebarMeta.style.marginTop) + 10) {
-        sidebarWrapper.classList.add('home-sidebar-fixed')
-      } else {
-        sidebarWrapper.classList.remove('home-sidebar-fixed')
+
+  let lastTop = 0, lList = [], hList = [], postBody, lastIndex = -1;
+  let active = 'active-show', activeClass = 'active-current';
+  let tocWrapper = document.querySelector('#toc_wrapper');
+  let tocContent = tocWrapper.children[0];
+  let autoNumber = tocWrapper && tocWrapper.classList.contains('auto-number');
+
+  function addTocNumber(elem, deep) {
+    if (!elem) {
+      return;
+    }
+    let prop = elem.__proto__;
+
+    if (prop === HTMLUListElement.prototype) {
+      for (let i = 0; i < elem.children.length; i++) {
+        addTocNumber(elem.children[i], deep + (i + 1) + '.');
       }
+    } else if (prop === HTMLLIElement.prototype) {
+      // 保存li元素
+      if (elem.children[0] && elem.children[0].__proto__ === HTMLAnchorElement.prototype) {
+        lList.push(elem);
+      }
+      for (let i = 0; i < elem.children.length; i++) {
+        let cur = elem.children[i];
+        if (cur.__proto__ === HTMLAnchorElement.prototype) {
+          if (autoNumber) {
+            cur.text = deep + ' ' + cur.text;
+          }
+        } else if (cur.__proto__ === HTMLUListElement.prototype) {
+          addTocNumber(cur, deep);
+        }
+      }
+    }
+  }
+
+  function removeParentActiveClass() {
+    let parents = tocContent.querySelectorAll('.' + active)
+    parents.forEach(function (elem) {
+      elem.classList.remove(active);
     });
   }
-  </script>
-        <div class="section-box pisces">
-          <section class="section bg-color posts-expand slide-down-in">
-            
-  <article class="post-list-box  post box-shadow-wrapper">
-    <div class="article-wrapper bg-color">
-      <section class="post-header">
-  <h1 class="post-title">
-    <a class="post-title-link" href="https://Miralia.github.io/luVP4ms34/">
-      《命运2》DSC最不详细的攻略
-    </a>
-  </h1>
-  <div class="post-meta">
-    
-    <span class="meta-item pc-show">
-      <i class="fa fa-calendar-o"></i>
-      <span class="language" data-lan="publish">发布于</span>
-      <span class="publish-time" data-t="2021-04-06 17:43:38">2021-04-06</span>
-      <span class="post-meta-divider pc-show">|</span>
-    </span>
-    
-    <span class="meta-item">
-      <i class="fa fa-clock-o"></i>
-      <span>2<span class="language" data-lan="minute">分钟</span></span>
-    </span>
-    <span class="meta-item">
-      <span class="post-meta-divider">|</span>
-      <i class="fa fa-file-word-o"></i>
-      <span>537<span class="pc-show language" data-lan="words">字数</span></span>
-    </span>
-    
-  </div>
-</section>
-      <div class="post-body">
-        
-        
-          
-            <!-- 没有手动摘要切开启了自动摘要,则根据配置筛除摘要内容 -->
-            
-            
-              
-              
-              
-            
-              
-              
-              
-            
-              
-              
-              
-            
-            
-              <p><p>#前言<br>
-一份简简单单不完善的DSC攻略，欢迎指正。如有遗漏请重拳出击。<br>
-#核心机制<br>
 
-                
-              <p>
-            
+  function addActiveClass(index) {
+    if (index >= 0 && index < hList.length) {
+      lList[index].classList.add(activeClass);
+    }
+  }
+
+  function removeActiveClass(index) {
+    if (index >= 0 && index < hList.length) {
+      lList[index].classList.remove(activeClass);
+    }
+  }
+
+  function addActiveLiElemment(elem, parent) {
+    if (!elem || elem === parent) {
+      return;
+    } else {
+      if (elem.__proto__ === HTMLLIElement.prototype) {
+        elem.classList.add(active);
+      }
+      addActiveLiElemment(elem.parentElement, parent);
+    }
+  }
+
+  function showToc() {
+    if (tocWrapper) {
+      postBody = document.querySelector('#post_body');
+      for (let i = 0; i < postBody.children.length; i++) {
+        if (postBody.children[i].__proto__ === HTMLHeadingElement.prototype) {
+          hList.push(postBody.children[i]);
+        }
+      }
+      if (tocWrapper.classList.contains('compress')) {
+        tocContent.classList.add('closed');
+      } else if (tocWrapper.classList.contains('no_compress')) {
+        tocContent.classList.add('expanded');
+      } else {
+        if (hList.length > 10) {
+          active = 'active-hidden'
+          tocContent.classList.add('closed');
+        } else {
+          tocContent.classList.add('expanded');
+        }
+      }
+    }
+  }
+
+  (function () {
+    // 处理不是从#一级标题开始目录
+    if (tocContent.children.length === 1 && tocContent.children[0].__proto__ === HTMLLIElement.prototype) {
+      let con = tocContent.children[0].children[0];
+      tocContent.innerHTML = con.innerHTML;
+    }
+    let markdownItTOC = document.querySelector('.markdownIt-TOC');
+    let innerHeight = window.innerHeight;
+    markdownItTOC.style = `max-height: ${innerHeight - 80 > 0 ? innerHeight - 80 : innerHeight}px`
+    addTocNumber(tocContent, '');
+  })();
+
+  document.addEventListener('scroll', function (e) {
+    if (lList.length <= 0) {
+      return;
+    }
+    let scrollTop = document.scrollingElement.scrollTop + 10;
+    let dir;
+
+    if (lastTop - scrollTop > 0) {
+      dir = 'up';
+    } else {
+      dir = 'down';
+    }
+
+    lastTop = scrollTop;
+    if (scrollTop <= 0) {
+      if (lastIndex >= 0 && lastIndex < hList.length) {
+        lList[lastIndex].classList.remove(activeClass);
+      }
+      return;
+    }
+
+    let current = 0, hasFind = false;
+    for (let i = 0; i < hList.length; i++) {
+      if (hList[i].offsetTop > scrollTop) {
+        current = i;
+        hasFind = true;
+        break;
+      }
+    }
+    if (!hasFind && scrollTop > lList[lList.length - 1].offsetTop) {
+      current = hList.length - 1;
+    } else {
+      current--;
+    }
+    if (dir === 'down') {
+      if (current > lastIndex) {
+        addActiveClass(current);
+        removeActiveClass(lastIndex)
+        lastIndex = current;
+        removeParentActiveClass();
+        lList[current] && addActiveLiElemment(lList[current].parentElement, tocContent);
+      }
+    } else {
+      if (current < lastIndex) {
+        addActiveClass(current);
+        removeActiveClass(lastIndex);
+        lastIndex = current;
+        removeParentActiveClass();
+        lList[current] && addActiveLiElemment(lList[current].parentElement, tocContent);
+      }
+    }
+  });
+
+
+  window.addEventListener('load', function () {
+    showToc();
+    document.querySelector('#sidebar').style = 'display: block;';
+    tocWrapper.classList.add('toc-active');
+    setTimeout(function () {
+      if ("createEvent" in document) {
+        let evt = document.createEvent("HTMLEvents");
+        evt.initEvent("scroll", false, true);
+        document.dispatchEvent(evt);
+      }
+      else {
+        document.fireEvent("scroll");
+      }
+    }, 500)
+  })
+
+</script>
+            </div>
           
-        
-        
-        <div class="post-button text-center">
-          <a class="btn language" data-lan="read-more" href="https://Miralia.github.io/luVP4ms34/" rel="contents">
-            阅读全文 »
-          </a>
-        </div>
         
       </div>
-      
-        <footer class="post-footer">
-          <div class="post-eof"></div>
-        </footer>
-      
     </div>
-  </article>
+  
+</div>
+<script>
+  const SIDEBAR_TITLE_ACTIVE = 'sidebar-title-active';
+  const SIDEBAR_BODY_ACTIVE = 'sidebar-body-active';
+  const SLIDE_UP_IN = 'slide-up-in';
 
-  <article class="post-list-box  post box-shadow-wrapper">
-    <div class="article-wrapper bg-color">
-      <section class="post-header">
+  let sidebar = document.querySelector('#sidebar'),
+  tocSideBar = document.querySelector('#tocSideBar'),
+  metaSideBar = document.querySelector('#metaSideBar'),
+  postToc = document.querySelector('#post_toc'),
+  postSiteMeta = document.querySelector('#post_side_meta'),
+  sidebarTitle = document.querySelector('.sidebar-title'),
+  sidebarBody = document.querySelector('#sidebar_body');
+
+  tocSideBar && tocSideBar.addEventListener('click', (e) => {
+    toggleSidebar(e);
+  });
+
+  metaSideBar && metaSideBar.addEventListener('click', (e) => {
+    toggleSidebar(e);
+  });
+
+  function toggleSidebar(e) {
+    let currentTitle = document.querySelector("."+SIDEBAR_TITLE_ACTIVE);
+    if (currentTitle == e.srcElement) {
+      return ;
+    }
+    let current, showElement, hideElement;
+    if (e.srcElement == metaSideBar) {
+      showElement = postSiteMeta;
+      hideElement = postToc;
+    } else if (e.srcElement == tocSideBar){
+      showElement = postToc;
+      hideElement = postSiteMeta;
+    }
+    currentTitle.classList.remove(SIDEBAR_TITLE_ACTIVE);
+    e.srcElement.classList.add(SIDEBAR_TITLE_ACTIVE);
+
+    window.Velocity(hideElement, 'stop');
+    window.Velocity(hideElement, 'transition.slideUpOut', {
+      display: 'none',
+      duration: 200,
+      complete: function () {
+        window.Velocity(showElement, 'transition.slideDownIn', {
+          duration: 200
+        });
+      }
+    })
+    hideElement.classList.remove(SIDEBAR_BODY_ACTIVE);
+    showElement.classList.add(SIDEBAR_BODY_ACTIVE);
+  }
+
+  postToc && postToc.addEventListener('transitionend', function() {
+    this.classList.remove(SLIDE_UP_IN);
+  });
+
+  if (sidebarBody) {
+    if (sidebarBody.classList.contains('pisces') || sidebarBody.classList.contains('gemini')) {
+      let hasFix = false;
+      let scrollEl = document.querySelector('.main-continer');
+      let limitTop = document.querySelector('#nav_ul').children.length * 42 + 162;
+      window.addEventListener('scroll', function(e) {
+        if (document.scrollingElement.scrollTop >= limitTop) {
+          if (!hasFix) {
+            sidebar.classList.add('sidebar-fixed');
+            hasFix = true;
+          }
+        } else {
+          if (hasFix) {
+            sidebar.classList.remove('sidebar-fixed');
+            hasFix = false;
+          }
+        }
+      });
+    }
+  }
+  
+</script>
+        <div class="section-box box-shadow-wrapper">
+          <div class="section bg-color post post-page">
+            <section class="post-header">
   <h1 class="post-title">
     <a class="post-title-link" href="https://Miralia.github.io/cV1U1KUxR/">
       《命运2》浅析深石地窖的机制与设计
@@ -312,72 +532,94 @@
     
   </div>
 </section>
-      <div class="post-body">
-        
-        
-          
-            <!-- 没有手动摘要切开启了自动摘要,则根据配置筛除摘要内容 -->
-            
-            
-              
-              
-              
-            
-              
-              
-              
-            
-              
-              
-              
-            
-            
-              <p><h1 id="前言">前言</h1>
+            <div class="post-body next-md-body" id="post_body">
+              <h1 id="前言">前言</h1>
 <pre><code>一个完整的游戏通常是由许许多多的底层机制构成的。在《命运2》这类的FPS游戏中，玩家角色的移动、射击以及视角都是游戏的机制。
 本次将要分析的Raid副本深石地窖，其核心机制玩法就是由以上三个底层机制所延伸出来的。
+</code></pre>
+<h1 id="机制介绍">机制介绍</h1>
+<pre><code>本次Raid一共有3个核心机制、2个常驻机制以及2个延伸机制所构成。
+它们分别是：
+核心机制，操作员（红Buff）、扫描器（黄Buff）和抑制器（蓝Buff）
+常驻机制，增幅终端（Buff交换机）和哨兵（魔眼）
+延伸机制，消除Debuff（2号Boss）、箱子（3、4号Boss）
 
-                
-                  <!-- 自动摘要出来的内容有<code则补上结尾,防止格式错误 -->
-                  </code></pre>
-                
-              <p>
+核心机制中，操作员为射击机制的扩展，扫描器为玩家视角的扩展，抑制器为玩家移动的扩展。
+而两个常驻机制，增幅终端用于存取红黄蓝三种Buff，不受距离所限制，三种Buff可在关卡的任意一个增幅终端存入，由其它增幅终端拿取。另个一常驻机制是哨兵，即游戏中常见的堕落者（Fallen）单位魔眼，哨兵刷新时游戏字幕会有提示“一个哨兵正在破坏增幅终端”，如果哨兵在关卡内存活，增幅终端将无法正常使用。
+三种延伸机制为某几个关卡中的核心机制延申，在此将其放到各个关卡的详细分析当中。
+</code></pre>
+<h1 id="第一关-规避墓室安全">第一关 规避墓室安全</h1>
+<h2 id="关卡介绍">关卡介绍</h2>
+<pre><code>本关卡为此次Raid的第一场遭遇战，也是玩家第一次了解到本次Raid核心机制的起点。
+在第一关中，玩家入场后会首先看到一台增幅终端，存放在增幅终端中的操作员Buff，黑白两个房间中各三个白色柱子（共6根）。当玩家从增幅终端中拿取操作员Buff，即开启战斗。同时，连通黑白场的门会关闭。
+（配图，交换机里的红Buff）
+（配图，白场3根柱子）
+（配图，黑场3根柱子）
+本次战斗的场地被分为上层的黑场和白场，以及地下室。三个区域各有一台增幅终端，可以用于Buff的传递。  战斗开始之后，扫描器Buff会固定从黑场的小怪身上刷新，击杀即会掉落可拾取的扫描器Buff。
+（配图，第一关上下层平面图）
+地下室场景中存在与上层黑白对应的两个区域，其中各有5个，共计10个开关。开关可以由携带操作员Buff的玩家射击触发。同时，地下室入口的门也需要由操作员射击开关触发。扫描器Buff携带者可以通过上层的玻璃观察到下层开关的状态，寻找到对应黑白场各5个地下室开关中正确的2个，其中黑场2个，白场2个。下层操作员Buff玩家正确射击对应的4个开关之后，上层黑白场地中的柱子会降下保护罩，上层玩家的目标就是将这6根柱子击破，即可通关。
+地下室场景的增幅终端背后，有着6根保险丝，对应着上层黑白场中的六根柱子。在降下保护罩后，携带扫描器Buff可以观察到6根保险丝中哪一根是正确的，来通知上层玩家射击击破对应的柱子。即在保护罩降下之后，上下层需要将操作员Buff与扫描器Buff互换，下层玩家由操作员换为扫描器，观察并报告给上层玩家正确的柱子，上层玩家输出。
+（配图，下层亮起的保险丝）
+全部击破黑白场6根柱子之后即完成本关。
+</code></pre>
+<h2 id="分析">分析</h2>
+<pre><code>本关中玩家首次接触到了2个核心机制以及2个常驻机制，并初步了解到了它们在本次Raid中的作用。
+其中，操作员与扫描器两个机制分别从两个游戏底层机制出发，强化了玩家与游戏底层机制的互动能力。操作员的射击互动和扫描器的分辨真假两种机制，都是在玩家所能应用到的底层机制中所延伸出来的。
+强化玩家对于底层机制的应用是一种非常优秀的设计，相对于创造一个全新的游戏机制制作到副本当中，这样的方法能更合理的运用游戏已有的内容。接下来关卡所引入的另一个核心机制扫描器也同样遵循了这个设计逻辑。
+</code></pre>
+<h1 id="第二关-阿特拉克斯-1">第二关 阿特拉克斯-1</h1>
+<h2 id="关卡介绍-2">关卡介绍</h2>
+<h2 id="分析-2">分析</h2>
+<pre><code>本关还是延续了第一关的几个机制，其中2个核心机制的应用也出现都出现了变化。
+扫描器Buff从第一关的观察正确开关变成了观察Boss的真身，机制本身没有什么变化，只是应用的对象发生了变化。但操作员Buff在本关新增了一个延伸机制，消除
+</code></pre>
+<h1 id="第三关-在下落中存活">第三关 在下落中存活</h1>
+<h2 id="关卡介绍-3">关卡介绍</h2>
+<h2 id="分析-3">分析</h2>
+<h1 id="第四关-坦尼克斯">第四关 坦尼克斯</h1>
+<h2 id="关卡介绍-4">关卡介绍</h2>
+<h2 id="分析-4">分析</h2>
+<h1 id="总评">总评</h1>
+
+            </div>
             
-          
-        
-        
-        <div class="post-button text-center">
-          <a class="btn language" data-lan="read-more" href="https://Miralia.github.io/cV1U1KUxR/" rel="contents">
-            阅读全文 »
-          </a>
-        </div>
-        
-      </div>
+            
+              <div class="post-footer">
+  <ul class="post-copyright">
+    <li class="post-copyright-author">
+      <strong class="language" data-lan="author">本文作者：</strong>
+      Miralia
+    </li>
+    <li class="post-copyright-link">
+      <strong class="language" data-lan="link">本文链接：</strong>
+      <a href="https://Miralia.github.io/cV1U1KUxR/" title="《命运2》浅析深石地窖的机制与设计">https://Miralia.github.io/cV1U1KUxR/</a>
+    </li>
+    <li class="post-copyright-license">
+      <strong class="language" data-lan="copyright">版权声明： </strong>
+      本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i> BY-NC-SA</a> 许可协议。转载请注明出处！
+    </li>
+  </ul>
+  <div class="tags">
+    
+  </div>
+  <div class="nav">
+    <div class="nav-prev">
       
-        <footer class="post-footer">
-          <div class="post-eof"></div>
-        </footer>
+        <i class="fa fa-chevron-left"></i>
+        <a class="nav-pc-next" title="《命运2》DSC最不详细的攻略" href="https://Miralia.github.io/luVP4ms34/">《命运2》DSC最不详细的攻略</a class="nav-pc-next">
+        <a class="nav-mobile-prev" title="《命运2》DSC最不详细的攻略" href="https://Miralia.github.io/luVP4ms34/">上一篇</a>
       
     </div>
-  </article>
-  
-            
-            
-<div class="page bg-color">
-  <ul class="pagination-ul">
-    
-    
+    <div class="nav-next">
       
-        <li class="pagination-li pagination-active">
-            <a href="/page/../">
-              1
-            </a>
-        </li>
-      
-    
-    
-  </ul>
+    </div>
+  </div>
 </div>
-          </section>
+            
+            
+  
+
+          </div>
         </div>
       </div>
     </div>
@@ -584,6 +826,223 @@
     parent.insertBefore(aelem, next);
   })
 </script>
+    <div class="reward-mask" style="display: none;">
+  <div class="reward-relative">
+    <span class="close" aria-hidden="true">x</span>
+    <div class="reward-body">
+      <h2>感谢您的支持，我会继续努力的!</h2>
+      <div class="reward-img-box">
+        <div style="position: relative; width: 140px; height: 140px;">
+          
+          
+          
+        </div>
+      </div>
+      <p class="reward-word">扫码打赏，你说多少就多少</p>
+      <p class="reward-tip">打开微信扫一扫，即可进行扫码打赏哦</p>
+    </div>
+    <div class="bottom">
+      
+      
+    </div>
+  </div>
+</div>
+<style>
+  .reward-mask {
+    position: fixed;
+    z-index: 99999;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #00000054;
+  }
+
+  .reward-relative {
+    position: relative;
+    width: 480px;
+    text-align: center;
+    margin: 0 auto;
+    border-radius: 5px;
+    background-color: #fff;
+    top: 50%;
+    margin-top: -205px;
+  }
+
+  .reward-relative .close {
+    position: absolute;
+    right: 10px;
+    font-weight: normal;
+    font-size: 16px;
+    color: #929292;
+  }
+
+  .reward-body {
+    padding: 40px 20px 20px;
+  }
+
+  .bottom {
+    display: flex;
+  }
+
+  .reward-btn {
+    text-align: center;
+  }
+
+  .reward-btn-text {
+    display: inline-block;
+    cursor: pointer;
+    width: 60px;
+    height: 60px;
+    line-height: 60px;
+    border-radius: 50%;
+    background-color: #ff9734;
+    color: #FFF;
+    margin-top: 20px;
+  }
+
+  .pay-text {
+    margin-top: 10px;
+    padding: 10px;
+    flex: 1;
+    transition: all .2s linear;
+  }
+
+  .pay-text:hover {
+    background-color: #a5a5a536;
+  }
+
+  .reward-body h2 {
+    padding-top: 10px;
+    text-align: center;
+    color: #a3a3a3;
+    font-size: 16px;
+    font-weight: normal;
+    margin: 0 0 20px;
+  }
+
+  .reward-body h2:after,
+  .reward-body h2:before {
+    font-family: Arial, Helvetica, sans-serif;
+    background: 0 0;
+    width: 0;
+    height: 0;
+    font-style: normal;
+    color: #eee;
+    font-size: 80px;
+    position: absolute;
+    top: 20px;
+  }
+
+  .reward-body h2:before {
+    content: '\201c';
+    left: 50px;
+  }
+
+  .reward-body h2:after {
+    content: '\201d';
+    right: 80px;
+  }
+
+  .reward-img-box {
+    display: inline-block;
+    padding: 10px;
+    border: 6px solid #ea5f00;
+    margin: 0 auto;
+    border-radius: 3px;
+    position: relative;
+  }
+
+  .reward-img {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+  }
+
+  @media (max-width: 767px) {
+    .reward-relative {
+      height: 100%;
+      top: 0px;
+      margin-top: 0;
+      width: auto;
+    }
+
+    .reward-relative .bottom {
+      flex-direction: column;
+    }
+
+    .reward-relative .pay-text {
+      width: 80%;
+      margin: 5px auto;
+      border: 1px solid silver;
+      padding: 6px;
+      border-radius: 4px;
+    }
+
+    .reward-body h2:after {
+      right: 40px;
+    }
+
+    .reward-body h2:after,
+    .reward-body h2:before {
+      font-size: 60px;
+    }
+
+    .reward-body h2:before {
+      left: 20px;
+    }
+  }
+</style>
+<script>
+  !function () {
+    var mask = document.querySelector('.reward-mask');
+    let close = document.querySelector('.reward-relative .close');
+    let rewardBtn = document.querySelector('.reward-btn');
+
+    let zfb = document.querySelector('#zfb'),
+      wx = document.querySelector('#wx'),
+      zfbBtn = document.querySelector('#zfbBtn'),
+      wxBtn = document.querySelector('#wxBtn');
+
+    if (zfbBtn && wxBtn) {
+      zfbBtn.addEventListener('click', () => {
+        window.Velocity(zfb, 'transition.slideLeftIn', {
+          duration: 400
+        });
+        window.Velocity(wx, 'transition.slideRightOut', {
+          display: 'none',
+          duration: 400
+        });
+      });
+
+      wxBtn.addEventListener('click', () => {
+        window.Velocity(wx, 'transition.slideRightIn', {
+          duration: 400
+        });
+        window.Velocity(zfb, 'transition.slideLeftOut', {
+          display: 'none',
+          duration: 400
+        });
+      });
+    }
+
+    rewardBtn.addEventListener('click', (e) => {
+      window.Velocity(mask, 'transition.slideDownIn', {
+        duration: 400
+      })
+    });
+
+    close.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.Velocity(mask, 'transition.slideUpOut', {
+        duration: 400
+      })
+    })
+  }()
+</script>
+
   </div>
 </body>
 
@@ -985,7 +1444,6 @@
     speed: 200
   });
 </script>
-
 
 
 
